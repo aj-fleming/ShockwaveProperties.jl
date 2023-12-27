@@ -3,6 +3,10 @@ uuid = "77d2bf28-a3e9-4b9c-9fcf-b85f74cc8a50"
 authors = ["Alex Fleming <alexander.fleming@rwth-aachen.de> and contributors"]
 version = "1.0.0-DEV"
 
+[deps]
+PhysicalConstants = "5ad8b20f-a522-5ce9-bfc9-ddf1d5bda6ab"
+Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
+
 [compat]
 julia = "1.6"
 

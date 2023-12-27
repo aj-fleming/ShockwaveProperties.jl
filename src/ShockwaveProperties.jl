@@ -1,5 +1,6 @@
 module ShockwaveProperties
 
-# Write your package code here.
+include("cpg.jl")
+include("normal_shocks.jl")
 
 end
