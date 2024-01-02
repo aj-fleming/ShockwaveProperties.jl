@@ -72,7 +72,7 @@ The shock wave parametrization developed by *Billig* parametrizes the shock wave
 """
 function shock_tangent(α, M_inf, R_b)
     n = shock_normal(α, M_inf, R_b)
-    return [n[2], 1]
+    return [n[2], -n[1]]
 end
 
 end # module

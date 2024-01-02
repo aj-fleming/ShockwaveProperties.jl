@@ -56,6 +56,10 @@ function shock_tangent_mach_ratio(M, n̂; gas::CaloricallyPerfectGas=DRY_AIR)
     return sqrt(shock_temperature_ratio(M, n̂; gas=gas))
 end
 
+@inline function shock_normal_momentum_ratio(M, n̂; gas::CaloricallyPerfectGas=DRY_AIR)
+    return shock_density_ratio(M, n̂; gas=gas) * shock_normal_velocity_ratio(M, n̂; gas=gas)
+end
+
 """
 **Equation 4.11** from Anderson&Anderson
 
@@ -73,6 +77,7 @@ The outward (away from body) normal is ``n̂``.
 function conserved_state_behind(state_L::ConservedState, n̂, t̂; gas::CaloricallyPerfectGas=DRY_AIR)
     @assert t̂ ⋅ n̂ == 0. "tangent and normal vectors should be normal."
     M_L = state_L.ρv / (state_L.ρ * speed_of_sound(gas, state_L))
-    mach_t_ratio = shock_tangent_mach_ratio(M_L, n̂; gas=gas)
-    M_R_n = (M_L⋅n̂) * shock_normal_mach_ratio(M_L, n̂; gas=gas)
+    ρv_n_L = (state_L.ρv ⋅ n̂) * shock_normal_momentum_ratio(M_L, n̂; gas=gas)
+    ρv_t_L = (state_L.ρv ⋅ n̂) * shock_density_ratio(M_L, n̂; gas=gas)
+    
 end
