@@ -6,7 +6,7 @@ using LinearAlgebra
 Computes the density change across a shock wave. 
 The incoming flow has Mach number(s) ``M=[M_x, M_y]`` and the outward (away from body) normal is ``n̂``.
 """
-@inline function shock_density_ratio(M, n̂; gas::CaloricallyPerfectGas=DRY_AIR)
+function shock_density_ratio(M, n̂; gas::CaloricallyPerfectGas=DRY_AIR)
     Mn2 = (M ⋅ n̂)^2
     return ((gas.γ + 1) * Mn2) / ((gas.γ - 1) * Mn2 + 2)
 end
@@ -17,7 +17,7 @@ end
 Computes the pressure ratio across a shock wave.
 The incoming flow has Mach number(s) ``M=[M_x, M_y]`` and the outward (away from body) normal is ``n̂``.
 """
-@inline function shock_pressure_ratio(M, n̂; gas::CaloricallyPerfectGas=DRY_AIR)
+function shock_pressure_ratio(M, n̂; gas::CaloricallyPerfectGas=DRY_AIR)
     Mn2 = (M ⋅ n̂)^2
     return 1 + (2 * gas.γ) / (gas.γ + 1) * (Mn2 - 1)
 end
@@ -52,7 +52,7 @@ The incoming flow has Mach number(s) ``M=[M_x, M_y]`` and the outward (away from
 
 Derived from speed of sound proportional to the square root of temperature.
 """
-function shock_tangent_mach_ratio(M, n̂; gas::CaloricallyPerfectGas=DRY_AIR)
+@inline function shock_tangent_mach_ratio(M, n̂; gas::CaloricallyPerfectGas=DRY_AIR)
     return sqrt(shock_temperature_ratio(M, n̂; gas=gas))
 end
 
@@ -66,7 +66,7 @@ end
 Computes the temperature ratio across a shock wave.
 The incoming flow has Mach number(s) ``M=[M_x, M_y]`` and the outward (away from body) normal is ``n̂``.
 """
-function shock_temperature_ratio(M, n̂; gas::CaloricallyPerfectGas=DRY_AIR)
+@inline function shock_temperature_ratio(M, n̂; gas::CaloricallyPerfectGas=DRY_AIR)
     return shock_pressure_ratio(M, n̂; gas=gas) / shock_density_ratio(M, n̂; gas=gas)
 end
 
@@ -75,13 +75,18 @@ Computes the conservation properties behind a shockwave.
 The outward (away from body) normal is ``n̂``.
 """
 function conserved_state_behind(state_L::ConservedState, n̂, t̂; gas::CaloricallyPerfectGas=DRY_AIR)
-    @assert t̂ ⋅ n̂ == 0. "tangent and normal vectors should be normal."
+    @assert t̂ ⋅ n̂ == 0.0 "tangent and normal vectors should be normal."
     M_L = state_L.ρv / (state_L.ρ * speed_of_sound(gas, state_L))
+    # density change
     ρ_R = state_L.ρ * shock_density_ratio(M_L, n̂; gas=gas)
+    # momentum change
     ρv_n_R = (state_L.ρv ⋅ n̂) * shock_normal_momentum_ratio(M_L, n̂; gas=gas)
     ρv_t_R = (state_L.ρv ⋅ t̂) * shock_density_ratio(M_L, n̂; gas=gas)
-
-    # TODO calculate ρE from ratios
-    
-    return ConservedState(ρ_R, ρv_n_R * n̂ + ρv_t_R * t̂, 0)
+    ρv_R = ρv_n_R * n̂ + ρv_t_R * t̂
+    # total internal energy change
+    ρe_L = state_L.ρE - (state_L.ρv ⋅ state_L.ρv) / (2 * state_L.ρ)
+    # e = cT
+    ρe_R = ρe_L * shock_density_ratio(M_L, n̂; gas=gas) * shock_temperature_ratio(M_L, n̂; gas=gas)
+    ρE_R = ρe_R + (ρv_R ⋅ ρv_R) / (2 * ρ_R)
+    return ConservedState(ρ_R, ρv_R, ρE_R)
 end
