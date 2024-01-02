@@ -77,7 +77,11 @@ The outward (away from body) normal is ``n̂``.
 function conserved_state_behind(state_L::ConservedState, n̂, t̂; gas::CaloricallyPerfectGas=DRY_AIR)
     @assert t̂ ⋅ n̂ == 0. "tangent and normal vectors should be normal."
     M_L = state_L.ρv / (state_L.ρ * speed_of_sound(gas, state_L))
-    ρv_n_L = (state_L.ρv ⋅ n̂) * shock_normal_momentum_ratio(M_L, n̂; gas=gas)
-    ρv_t_L = (state_L.ρv ⋅ n̂) * shock_density_ratio(M_L, n̂; gas=gas)
+    ρ_R = state_L.ρ * shock_density_ratio(M_L, n̂; gas=gas)
+    ρv_n_R = (state_L.ρv ⋅ n̂) * shock_normal_momentum_ratio(M_L, n̂; gas=gas)
+    ρv_t_R = (state_L.ρv ⋅ t̂) * shock_density_ratio(M_L, n̂; gas=gas)
+
+    # TODO calculate ρE from ratios
     
+    return ConservedState(ρ_R, ρv_n_R * n̂ + ρv_t_R * t̂, 0)
 end
