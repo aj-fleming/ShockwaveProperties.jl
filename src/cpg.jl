@@ -81,9 +81,9 @@ pressure(gas::CaloricallyPerfectGas, ρe::Float64) = (gas.γ - 1) * Quantity(ρe
 pressure(gas::CaloricallyPerfectGas, ρe::Quantity{Float64,_dimension_ρE,Units}) where {Units} = (gas.γ - 1) * ρe
 
 """
-Named tuple type of the conserved quantities in the Euler equations.
+The conserved quantities in the Euler equations.
 """
-ConservedState = @NamedTuple begin
+struct ConservedState
     ρ::Quantity{Float64,_dimension_ρ,_units_ρ}
     ρv::Vector{Quantity{Float64,_dimension_ρv,_units_ρv}}
     ρE::Quantity{Float64,_dimension_ρE,_units_ρE}
@@ -95,10 +95,10 @@ Compute the internal energy volume density (ρe) from conserved state quantities
 internal_energy_density(state::ConservedState) = state.ρE - (state.ρv ⋅ state.ρv) / (2 * state.ρ)
 
 """
-Named tuple type of the primitive (not conserved) quantities 
-that completely determine the state of a calorically perfect gas.
+Properties, that are easier to reason about than those in a `ConservedState`, 
+that also completely determine the state of a calorically perfect gas.
 """
-PrimitiveState = @NamedTuple begin
+struct PrimitiveState
     ρ::Quantity{Float64,_dimension_ρ,_units_ρ}
     M::Vector{Float64}
     T::Quantity{Float64,Unitful.𝚯,_units_T}
