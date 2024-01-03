@@ -80,8 +80,29 @@ Compute the pressure in a calorically perfect gas from its internal energy densi
 pressure(gas::CaloricallyPerfectGas, ρe::Float64) = (gas.γ - 1) * Quantity(ρe, _units_ρE)
 pressure(gas::CaloricallyPerfectGas, ρe::Quantity{Float64,_dimension_ρE,Units}) where {Units} = (gas.γ - 1) * ρe
 
+
+
+"""
+Properties, that are easier to reason about than those in a `ConservedState`. 
+These completely determine the state of a calorically perfect gas.
+
+ - ``ρ``: Density of the gas.
+ - ``M``: The mach number, represented as a vector quantity.
+ - ``T``: The absolute temperature of the gas.
+"""
+struct PrimitiveState
+    ρ::Quantity{Float64,_dimension_ρ,_units_ρ}
+    M::Vector{Float64}
+    T::Quantity{Float64,Unitful.𝚯,_units_T}
+end
+
 """
 The conserved quantities in the Euler equations.
+
+ - ``ρ``: Density of the gas.
+ - ``ρv``: Momentum density of the gas, represented as a vector quantity.
+ - ``ρE``: The **sum** of the internal energy density of the gas and kinetic energy density of the moving gas.
+
 """
 struct ConservedState
     ρ::Quantity{Float64,_dimension_ρ,_units_ρ}
@@ -89,20 +110,24 @@ struct ConservedState
     ρE::Quantity{Float64,_dimension_ρE,_units_ρE}
 end
 
+function ConservedState(ρ::Float64, ρv::Vector{Float64}, ρE::Float64)
+    return ConservedState(Quantity(ρ, _units_ρ), Quantity.(ρv, _units_ρv), Quantity(ρE, _units_ρE))
+end
+
+function ConservedState(ρ::Quantity{Float64,_dimension_ρ,Units1}, ρv::Vector{Quantity{Float64,_dimension_ρv,Units2}}, ρE::Quantity{Float64,_dimension_ρE,Units3}) where {Units1,Units2,Units3}
+    return ConservedState(uconvert(ρ, _units_ρ), uconvert.(ρv, _units_ρv), uconvert(ρE, _units_ρE))
+end
+
+function ConservedState(state::PrimitiveState, gas)
+    v = state.M * speed_of_sound(gas, state)
+    e = gas.c_v * T
+    return ConservedState(state.ρ, state.ρ*v, state.ρ * (e + v⋅v/2))
+end
+
 """
 Compute the internal energy volume density (ρe) from conserved state quantities.
 """
 internal_energy_density(state::ConservedState) = state.ρE - (state.ρv ⋅ state.ρv) / (2 * state.ρ)
-
-"""
-Properties, that are easier to reason about than those in a `ConservedState`, 
-that also completely determine the state of a calorically perfect gas.
-"""
-struct PrimitiveState
-    ρ::Quantity{Float64,_dimension_ρ,_units_ρ}
-    M::Vector{Float64}
-    T::Quantity{Float64,Unitful.𝚯,_units_T}
-end
 
 """
 Compute the pressure at a given state in a gas.

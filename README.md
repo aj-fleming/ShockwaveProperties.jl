@@ -12,6 +12,7 @@ The `PrimitiveState` and `ConservedState` types allow for conversion between spe
 
 ```julia
 free_stream = PrimitiveState(1.225u"kg/m^3", [2.0, 0.0], 300u"K")
-u = ConservedState(free_stream)
+u = ConservedState(free_stream, DRY_AIR)
 ```
+
 
