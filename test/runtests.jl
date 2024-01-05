@@ -48,7 +48,7 @@ end
         # restricted domain here because formula from Anderson&Anderson
         # breaks down near β = 0
         # TODO investigate this.
-        for θ ∈ range(0, π / 6, 40)
+        for θ ∈ range(0, π / 6; length=40)
             n = [-cos(θ), sin(θ)]
             t = [0 1; -1 0] * n
             u_R = state_behind(u_L, n, t; gas=DRY_AIR)
