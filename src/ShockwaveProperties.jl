@@ -1,9 +1,17 @@
 module ShockwaveProperties
 
+# constants
 export DRY_AIR
+# submodules
 export BilligShockParametrization
+# gas properties
+export ConservedState, PrimitiveState
+export density, temperature, pressure, speed_of_sound
+export enthalpy, internal_energy, internal_energy_density
+
+# shock wave jumps
 export shock_density_ratio, shock_pressure_ratio, shock_temperature_ratio
-export conserved_state_behind
+export state_behind
 
 include("cpg.jl")
 include("billig.jl")
