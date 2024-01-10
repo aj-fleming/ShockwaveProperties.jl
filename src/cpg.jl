@@ -47,46 +47,46 @@ function CaloricallyPerfectGas(c_p::Float64, c_v::Float64, ℳ::Float64)
 end
 
 """
-    enthalpy(gas::CaloricallyPerfectGas, T)
-Computes the enthalpy of a calorically perfect gas.
+    enthalpy(T; gas::CaloricallyPerfectGas)
+Computes the enthalpy of a calorically perfect gas at a temperature ``T``.
 """
-enthalpy(gas::CaloricallyPerfectGas, T::Float64) = gas.c_p * Quantity(T, _units_T)
-enthalpy(gas::CaloricallyPerfectGas, T::Temperature) = gas.c_p * T
+enthalpy(T; gas::CaloricallyPerfectGas) = gas.c_p * Quantity(T, _units_T)
+enthalpy(T::Temperature; gas::CaloricallyPerfectGas) = gas.c_p * T
 
 """
-    internal_energy(gas::CaloricallyPerfectGas, T)
+    internal_energy(T; gas::CaloricallyPerfectGas)
 Computes the internal energy of a calorically perfect gas.
 """
-internal_energy(gas::CaloricallyPerfectGas, T::Float64) = gas.c_v * Quantity(T, _units_T)
-internal_energy(gas::CaloricallyPerfectGas, T::Temperature) = gas.c_v * T
+internal_energy(T; gas::CaloricallyPerfectGas) = gas.c_v * Quantity(T, _units_T)
+internal_energy(T::Temperature; gas::CaloricallyPerfectGas) = gas.c_v * T
 
 """
-    speed_of_sound(gas::CaloricallyPerfectGas, T)
+    speed_of_sound(T; gas::CaloricallyPerfectGas)
 Computes the speed of sound in an ideal gas at a temperature ``T``. We assume 
 that the gas is a non-dispersive medium.
 """
-speed_of_sound(gas::CaloricallyPerfectGas, T::Float64) = sqrt(gas.γ * gas.R * Quantity(T, _units_T))
-speed_of_sound(gas::CaloricallyPerfectGas, T::Temperature) = sqrt(gas.γ * gas.R * T)
+speed_of_sound(T; gas::CaloricallyPerfectGas) = sqrt(gas.γ * gas.R * Quantity(T, _units_T))
+speed_of_sound(T::Temperature; gas::CaloricallyPerfectGas) = sqrt(gas.γ * gas.R * T)
 
 
 """
-    pressure(gas::CaloricallyPerfectGas, ρ, T)
+    pressure(ρ, T; gas::CaloricallyPerfectGas)
 Compute the pressure in a calorically perfect gas from its density and temperature.
 """
-function pressure(gas::CaloricallyPerfectGas, ρ::Float64, T::Float64)
-    return (gas.γ - 1) * Quantity(ρ, _units_ρ) * internal_energy(gas, T)
+function pressure(ρ, T; gas::CaloricallyPerfectGas)
+    return (gas.γ - 1) * Quantity(ρ, _units_ρ) * internal_energy(T; gas=gas)
 end
 
-function pressure(gas::CaloricallyPerfectGas, ρ::Density, T::Temperature)
-    return (gas.γ - 1) * ρ * internal_energy(gas, T)
+function pressure(ρ::Density, T::Temperature; gas::CaloricallyPerfectGas)
+    return (gas.γ - 1) * ρ * internal_energy(T; gas=gas)
 end
 
 """
-    pressure(gas::CaloricallyPerfectGas, ρE)
+    pressure(ρe; gas::CaloricallyPerfectGas)
 Compute the pressure in a calorically perfect gas from its internal energy density.
 """
-pressure(gas::CaloricallyPerfectGas, ρe::Float64) = (gas.γ - 1) * Quantity(ρe, _units_ρE)
-pressure(gas::CaloricallyPerfectGas, ρe::EnergyDensity) = (gas.γ - 1) * ρe
+pressure(ρe; gas::CaloricallyPerfectGas) = (gas.γ - 1) * Quantity(ρe, _units_ρE)
+pressure(ρe::EnergyDensity; gas::CaloricallyPerfectGas) = (gas.γ - 1) * ρe
 
 """
 Properties, that are easier to reason about than those in a `ConservedState`. 
@@ -106,7 +106,7 @@ end
     PrimitiveState(ρ::Float64, M::Vector{Float64}, T::Float64)
 Construct a PrimitiveState and assign the default units.
 """
-function PrimitiveState(ρ::Float64, M::Vector{Float64}, T::Float64)
+function PrimitiveState(ρ::U, M::Vector{U}, T::U) where {U}
     return PrimitiveState(Quantity(ρ, _units_ρ), M, Quantity(T, _units_T))
 end
 
@@ -125,30 +125,31 @@ struct ConservedState{U1<:Density,U2<:MomentumDensity,U3<:EnergyDensity}
 end
 
 """
-    PrimitiveState(state::ConservedState, gas::CaloricallyPerfectGas)
+    PrimitiveState(state::ConservedState; gas::CaloricallyPerfectGas)
 Compute the primitive state quantities from the conserved state quantities and 
 the thermodynamic properies of the gas.
 """
-function PrimitiveState(state::ConservedState, gas::CaloricallyPerfectGas)
-    a = speed_of_sound(gas, state)
-    return PrimitiveState(state.ρ, state.ρv / (state.ρ * a), temperature(gas, state))
+function PrimitiveState(state::ConservedState; gas::CaloricallyPerfectGas)
+    a = speed_of_sound(state; gas=gas)
+    # mach number should be dimensionless and unitless (we avoid e.g. 2.0u"mm/m")
+    return PrimitiveState(state.ρ, uconvert.(NoUnits, state.ρv / (state.ρ * a)), temperature(state, gas=gas))
 end
 
 """
     ConservedState(ρ::Float64, ρv::Vector{Float64}, ρE::Float64)
 Construct a ConservedState and assign the default units.
 """
-function ConservedState(ρ::Float64, ρv::Vector{Float64}, ρE::Float64)
+function ConservedState(ρ::T, ρv::Vector{T}, ρE::T) where {T}
     return ConservedState(Quantity(ρ, _units_ρ), Quantity.(ρv, _units_ρv), Quantity(ρE, _units_ρE))
 end
 
 """
-    ConservedState(state::PrimitiveState, gas::CaloricallyPerfectGas)
-Compute the conserved state quantities from the primitive state quantities and
-the thermodynamic properties of the gas.
+    ConservedState(state::PrimitiveState; gas::CaloricallyPerfectGas)
+Compute the conserved state quantities from primitive state quantities and
+the thermodynamic properties of a gas.
 """
-function ConservedState(state::PrimitiveState, gas::CaloricallyPerfectGas)
-    v = state.M * speed_of_sound(gas, state)
+function ConservedState(state::PrimitiveState; gas::CaloricallyPerfectGas)
+    v = state.M * speed_of_sound(state; gas=gas)
     e = gas.c_v * state.T
     return ConservedState(state.ρ, state.ρ * v, state.ρ * (e + v ⋅ v / 2))
 end
@@ -160,41 +161,41 @@ Compute the internal energy volume density (``ρe``) from conserved state quanti
 internal_energy_density(state::ConservedState) = state.ρE - (state.ρv ⋅ state.ρv) / (2 * state.ρ)
 
 """
-    internal_energy(gas::CaloricallyPerfectGas, state)
+    internal_energy(state; gas::CaloricallyPerfectGas)
 Compute the internal energy (``e``) of a gas at a given state.
 """
-internal_energy(::CaloricallyPerfectGas, state::ConservedState) = internal_energy_density(state) / state.ρ
-internal_energy(gas::CaloricallyPerfectGas, state::PrimitiveState) = gas.c_v * state.T 
+internal_energy(state::ConservedState; gas::CaloricallyPerfectGas) = internal_energy_density(state) / state.ρ
+internal_energy(state::PrimitiveState; gas::CaloricallyPerfectGas) = gas.c_v * state.T
 
 """
-    pressure(gas::CaloricallyPerfectGas, state)
+    pressure(state; gas::CaloricallyPerfectGas)
 Compute the pressure at a given state in a gas.
 """
-pressure(gas::CaloricallyPerfectGas, state::ConservedState) = pressure(gas, internal_energy_density(state))
-pressure(gas::CaloricallyPerfectGas, state::PrimitiveState) = pressure(gas, state.ρ, state.T)
+pressure(state::ConservedState; gas::CaloricallyPerfectGas) = pressure(internal_energy_density(state); gas=gas)
+pressure(state::PrimitiveState; gas::CaloricallyPerfectGas) = pressure(state.ρ, state.T; gas=gas)
 
 """
-    density(gas::CaloricallyPerfectGas, state)
+    density(state)
 Compute the density at a given state in a gas.
 """
-density(::CaloricallyPerfectGas, state::Union{ConservedState,PrimitiveState}) = state.ρ
+density(state::Union{ConservedState,PrimitiveState}) = state.ρ
 
 """
-    temperature(gas::CaloricallyPerfectGas, state)
+    temperature(state; gas::CaloricallyPerfectGas)
 Compute the temperature at a given state in a gas.
 """
-function temperature(gas::CaloricallyPerfectGas, state::ConservedState)
-    return internal_energy(gas, state) / gas.c_v
+function temperature(state::ConservedState; gas::CaloricallyPerfectGas)
+    return internal_energy(state; gas=gas) / gas.c_v
 end
 
-temperature(::CaloricallyPerfectGas, state::PrimitiveState) = state.T
-
-
+temperature(state::PrimitiveState; gas::CaloricallyPerfectGas) = state.T
 
 """
-    speed_of_sound(gas::CaloricallyPerfectGas, state::Union{ConservedState, PrimitiveState})
-Compute the speed of sound in a gas at a given state. We assume that the gas is a non-dispersive medium.
+    speed_of_sound(state::Union{ConservedState, PrimitiveState}; gas::CaloricallyPerfectGas)
+Compute the speed of sound in a gas at a given state. 
+
+*We assume that the gas is a non-dispersive medium.*
 """
-function speed_of_sound(gas::CaloricallyPerfectGas, state)
-    return speed_of_sound(gas, temperature(gas, state))
+function speed_of_sound(state::Union{ConservedState, PrimitiveState}; gas::CaloricallyPerfectGas)
+    return speed_of_sound(temperature(state; gas=gas); gas=gas)
 end

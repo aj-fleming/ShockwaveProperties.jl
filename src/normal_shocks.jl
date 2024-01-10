@@ -77,7 +77,7 @@ The outward (away from body) normal to the shockwave is ``n̂`` and the tangent 
 """
 function state_behind(state_L::ConservedState, n̂, t̂; gas::CaloricallyPerfectGas=DRY_AIR)
     @assert t̂ ⋅ n̂ == 0.0 "tangent and normal vectors should be normal."
-    M_L = state_L.ρv / (state_L.ρ * speed_of_sound(gas, state_L))
+    M_L = state_L.ρv / (state_L.ρ * speed_of_sound(state_L; gas=gas))
     # density change
     ρ_R = state_L.ρ * shock_density_ratio(M_L, n̂; gas=gas)
     # momentum change
