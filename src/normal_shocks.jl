@@ -122,8 +122,8 @@ function conserved_state_behind(state_L, n̂, t̂; gas::CaloricallyPerfectGas=DR
     ρe_L = internal_energy_density(state_L[1], ρv_L, state_L[end])
     # find the speed of sound w/o units :)
     # I don't actually know how well this plays with ad tools e.g. zygote
-    T_L = ρe_L / ustrip(gas.c_v)
-    a_L = ustrip(speed_of_sound(T_L; gas=gas))
+    T_L = ρe_L / (state_L[1]*ustrip(_units_cvcp, gas.c_v))
+    a_L = ustrip(u"m/s", speed_of_sound(T_L; gas=gas))
     M_L = ρv_L / (state_L[1] * a_L)
     # density change
     ρ_R = state_L[1] * shock_density_ratio(M_L, n̂; gas=gas)

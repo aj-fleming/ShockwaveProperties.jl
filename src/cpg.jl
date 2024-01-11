@@ -36,12 +36,18 @@ struct CaloricallyPerfectGas{U1<:HeatCapacity,U2<:MolarMass}
     R::U1
 end
 
-function CaloricallyPerfectGas(c_p::Float64, c_v::Float64, ℳ::Float64)
+function CaloricallyPerfectGas(c_p, c_v, ℳ)
     q_cp = Quantity(c_p, _units_cvcp)
     q_cv = Quantity(c_v, _units_cvcp)
     q_ℳ = Quantity(ℳ, _units_ℳ)
     q_R = q_cp - q_cv
     return CaloricallyPerfectGas{typeof(q_cp),typeof(q_ℳ)}(q_cp, q_cv, q_ℳ, c_p / c_v, q_R)
+end
+
+function CaloricallyPerfectGas(c_p::T, c_v::T, ℳ::U) where {T<:HeatCapacity,U<:Unitful.MolarMass}
+    R = c_p - c_v
+    γ = c_p / c_v
+    return CaloricallyPerfectGas{T,U}(c_p, c_v, ℳ, γ, R)
 end
 
 """
@@ -203,22 +209,30 @@ end
 
 ### DISRESPECT UNITS AND WORK WITH STATES AS COLLECTIONS ###
 
-function to_vector(state::T) where {T<:Union{PrimitiveState,ConservedState}}
-    return vcat(ustrip.(map(sym -> getfield(state, sym), fieldnames(T)))...)
+function state_to_vector(state::T) where {T<:Union{PrimitiveState,ConservedState}}
+    return vcat(map(sym -> ustrip.(getfield(state, sym)), fieldnames(T))...)
 end
 
+"""
+    primitive_state_vector(u; gas::CaloricallyPerfectGas)
+
+Takes a vector of conserved quantities ``u=[ρ, ρv, ρE]`` and converts it into
+``s=[ρ, M, T]``. 
+
+**Assumes that everything is given in metric base units!**
+"""
 function primitive_state_vector(u; gas::CaloricallyPerfectGas)
     ρv = u[2:end-1]
     ρe = internal_energy_density(u[1], ρv, u[end])
-    T = ρe / (u[1] * gas.c_v)
-    a = ustrip(speed_of_sound(ρe / (u[1] * gas.c_v), gas=gas))
+    T = ρe / (u[1] * ustrip(_units_cvcp, gas.c_v))
+    a = ustrip(u"m/s", speed_of_sound(T, gas=gas))
     return vcat(u[1], ρv / (u[1] * a), T)
 end
 
 function conserved_state_vector(s; gas::CaloricallyPerfectGas)
-    a = ustrip(speed_of_sound(s[end]; gas=gas))
+    a = ustrip(u"m/s", speed_of_sound(s[end]; gas=gas))
     ρv = s[1] * s[2:end-1] * a
-    ρe = s[1] * ustrip(gas.c_v) * s[end]
+    ρe = s[1] * ustrip(_units_cvcp, gas.c_v) * s[end]
     ρE = ρe + ρv ⋅ ρv / (2 * s[1])
     return vcat(s[1], ρv, ρE)
 end

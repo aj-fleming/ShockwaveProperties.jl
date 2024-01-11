@@ -17,9 +17,14 @@ export enthalpy, internal_energy, internal_energy_density
 export shock_density_ratio, shock_pressure_ratio, shock_temperature_ratio
 export state_behind
 
+# what if we ignored units?
+export state_to_vector
+export conserved_state_vector, conserved_state_behind, primitive_state_vector, primitive_state_behind
+
 include("cpg.jl")
 
-const DRY_AIR = CaloricallyPerfectGas(1.0049, 0.7178, 0.0289647)
+# At 300K
+const DRY_AIR = CaloricallyPerfectGas(1004.9u"J/kg/K", 717.8u"J/kg/K", 0.0289647u"kg/mol")
 
 include("billig.jl")
 include("normal_shocks.jl")
