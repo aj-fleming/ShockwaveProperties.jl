@@ -1,7 +1,5 @@
-using Unitful
 using Unitful: Temperature, Density, Velocity, @derived_dimension
 using Unitful: 𝐋, 𝐓, 𝐌, 𝚯, 𝐍
-using LinearAlgebra
 
 @derived_dimension HeatCapacity 𝐋^2 * 𝐓^-2 * 𝚯^-1
 @derived_dimension MolarMass 𝐌 * 𝐍^-1
@@ -62,8 +60,9 @@ internal_energy(T::Temperature; gas::CaloricallyPerfectGas) = gas.c_v * T
 
 """
     speed_of_sound(T; gas::CaloricallyPerfectGas)
-Computes the speed of sound in an ideal gas at a temperature ``T``. We assume 
-that the gas is a non-dispersive medium.
+Computes the speed of sound in an ideal gas at a temperature ``T``. 
+
+*We assume that the gas is a non-dispersive medium.*
 """
 speed_of_sound(T; gas::CaloricallyPerfectGas) = sqrt(gas.γ * gas.R * Quantity(T, _units_T))
 speed_of_sound(T::Temperature; gas::CaloricallyPerfectGas) = sqrt(gas.γ * gas.R * T)
@@ -155,10 +154,12 @@ function ConservedState(state::PrimitiveState; gas::CaloricallyPerfectGas)
 end
 
 """
+    internal_energy_density(ρ, ρv, ρE)
     internal_energy_density(state::ConservedState)
 Compute the internal energy volume density (``ρe``) from conserved state quantities.
 """
-internal_energy_density(state::ConservedState) = state.ρE - (state.ρv ⋅ state.ρv) / (2 * state.ρ)
+internal_energy_density(ρ, ρv, ρE) = ρE - (ρv ⋅ ρv) / (2 * ρ)
+internal_energy_density(state::ConservedState) = internal_energy_density(state.ρ, state.ρv, state.ρE)
 
 """
     internal_energy(state; gas::CaloricallyPerfectGas)
@@ -196,6 +197,28 @@ Compute the speed of sound in a gas at a given state.
 
 *We assume that the gas is a non-dispersive medium.*
 """
-function speed_of_sound(state::Union{ConservedState, PrimitiveState}; gas::CaloricallyPerfectGas)
+function speed_of_sound(state::Union{ConservedState,PrimitiveState}; gas::CaloricallyPerfectGas)
     return speed_of_sound(temperature(state; gas=gas); gas=gas)
+end
+
+### DISRESPECT UNITS AND WORK WITH STATES AS COLLECTIONS ###
+
+function to_vector(state::T) where {T<:Union{PrimitiveState,ConservedState}}
+    return vcat(ustrip.(map(sym -> getfield(state, sym), fieldnames(T)))...)
+end
+
+function primitive_state_vector(u; gas::CaloricallyPerfectGas)
+    ρv = u[2:end-1]
+    ρe = internal_energy_density(u[1], ρv, u[end])
+    T = ρe / (u[1] * gas.c_v)
+    a = ustrip(speed_of_sound(ρe / (u[1] * gas.c_v), gas=gas))
+    return vcat(u[1], ρv / (u[1] * a), T)
+end
+
+function conserved_state_vector(s; gas::CaloricallyPerfectGas)
+    a = ustrip(speed_of_sound(s[end]; gas=gas))
+    ρv = s[1] * s[2:end-1] * a
+    ρe = s[1] * ustrip(gas.c_v) * s[end]
+    ρE = ρe + ρv ⋅ ρv / (2 * s[1])
+    return vcat(s[1], ρv, ρE)
 end

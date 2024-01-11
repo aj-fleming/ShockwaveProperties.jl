@@ -11,7 +11,6 @@ function F(u::ConservedState)
 end
 
 @testset verbose = true "ShockwaveProperties.jl" begin
-
     @testset "Dimensional Analysis" begin
         # giving different units shouldn't mess with the actual results
         s1 = PrimitiveState(1.225, [2.0, 0.0], 300.0)

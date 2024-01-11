@@ -1,5 +1,9 @@
 module ShockwaveProperties
 
+using LinearAlgebra
+using Unitful
+using UnitfulChainRules
+
 # constants
 export DRY_AIR
 # submodules
