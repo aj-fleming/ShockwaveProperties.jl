@@ -77,6 +77,9 @@ speed_of_sound(T::Temperature; gas::CaloricallyPerfectGas) = sqrt(gas.γ * gas.R
 """
     pressure(ρ, T; gas::CaloricallyPerfectGas)
 Compute the pressure in a calorically perfect gas from its density and temperature.
+
+    pressure(ρe; gas::CaloricallyPerfectGas)
+Compute the pressure in a calorically perfect gas from its internal energy density.
 """
 function pressure(ρ, T; gas::CaloricallyPerfectGas)
     return (gas.γ - 1) * Quantity(ρ, _units_ρ) * internal_energy(T; gas=gas)
@@ -86,10 +89,6 @@ function pressure(ρ::Density, T::Temperature; gas::CaloricallyPerfectGas)
     return (gas.γ - 1) * ρ * internal_energy(T; gas=gas)
 end
 
-"""
-    pressure(ρe; gas::CaloricallyPerfectGas)
-Compute the pressure in a calorically perfect gas from its internal energy density.
-"""
 pressure(ρe; gas::CaloricallyPerfectGas) = (gas.γ - 1) * Quantity(ρe, _units_ρE)
 pressure(ρe::EnergyDensity; gas::CaloricallyPerfectGas) = (gas.γ - 1) * ρe
 

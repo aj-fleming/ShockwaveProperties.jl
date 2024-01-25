@@ -47,27 +47,40 @@ end
         n = [-1.0, 0]
         t = [0.0, 1.0]
         sL = PrimitiveState(1.225, [2.0, 0.0], 300.0)
-        sL_nounits = state_to_vector(sL)
         sR = state_behind(sL, n, t; gas=DRY_AIR)
+        sL_nounits = state_to_vector(sL)
         sR_nounits = primitive_state_behind(sL_nounits, n, t; gas=DRY_AIR)
-        @test sR_nounits[1] ≈ ustrip(sR.ρ)
-        @test all(sR_nounits[2:end-1] .≈ sR.M)
-        @test sR_nounits[end] ≈ ustrip(sR.T)
+        @testset "Primitive State Quantities" begin
+            @test sR_nounits[1] ≈ ustrip(sR.ρ)
+            @test all(sR_nounits[2:end-1] .≈ sR.M)
+            @test sR_nounits[end] ≈ ustrip(sR.T)
+            @test pressure(sL_nounits[1], sL_nounits[end]; gas=DRY_AIR) ≈ pressure(sL; gas=DRY_AIR)
+            @test pressure(sR_nounits[1], sR_nounits[end]; gas=DRY_AIR) ≈ pressure(sR; gas=DRY_AIR)
+        end
 
         uL = ConservedState(sL; gas=DRY_AIR)
         uL_nounits = state_to_vector(uL)
         uR = state_behind(uL, n, t; gas=DRY_AIR)
         uR_nounits = conserved_state_behind(uL_nounits, n, t; gas=DRY_AIR)
-        @test uR_nounits[1] ≈ ustrip(uR.ρ)
-        @test all(uR_nounits[2:end-1] .≈ ustrip.(uR.ρv))
-        @test uR_nounits[end] ≈ ustrip(uR.ρE)
 
-        uR_nounits2 = conserved_state_vector(sR_nounits; gas=DRY_AIR)
-        sR_nounits2 = primitive_state_vector(uR_nounits; gas=DRY_AIR)
-        @test uR_nounits[1] ≈ uR_nounits2[1]
-        @test all(uR_nounits .≈ uR_nounits2)
-        @test all(sR_nounits .≈ sR_nounits2)
+        @testset "Conserved State Quantities" begin
+            @test uR_nounits[1] ≈ ustrip(uR.ρ)
+            @test all(uR_nounits[2:end-1] .≈ ustrip.(uR.ρv))
+            @test uR_nounits[end] ≈ ustrip(uR.ρE)
+            ρe_nounits = internal_energy_density(uR_nounits[1], uR_nounits[2:end-1], uR_nounits[end])
+            @test ρe_nounits ≈ ustrip(internal_energy_density(uR))
+            @test pressure(ρe_nounits; gas=DRY_AIR) ≈ pressure(uR; gas=DRY_AIR)
+        end
+
+        @testset "Conversion" begin
+            uR_nounits2 = conserved_state_vector(sR_nounits; gas=DRY_AIR)
+            sR_nounits2 = primitive_state_vector(uR_nounits; gas=DRY_AIR)
+            @test uR_nounits[1] ≈ uR_nounits2[1]
+            @test all(uR_nounits .≈ uR_nounits2)
+            @test all(sR_nounits .≈ sR_nounits2)
+        end
     end
+    
     @testset "Rankine-Hugoniot Condition" begin
         free_stream = PrimitiveState(1.225, [2.0, 0.0], 300.0)
         u_L = ConservedState(free_stream; gas=DRY_AIR)
