@@ -74,7 +74,7 @@ Computes the gas state behind a shockwave.
 The outward (away from body) normal to the shockwave is ``n̂`` and the tangent to the shockwave is ``t̂``.
 """
 function state_behind(state_L::ConservedState, n̂, t̂; gas::CaloricallyPerfectGas=DRY_AIR)
-    @assert t̂ ⋅ n̂ ≈ 0.0 "tangent and normal vectors should be normal to each other."
+    @assert ≈(t̂ ⋅ n̂, 0.0, atol=eps(Float64)) "tangent and normal vectors should be normal to each other."
     M_L = state_L.ρv / (state_L.ρ * speed_of_sound(state_L; gas=gas))
     ρ_R = state_L.ρ * shock_density_ratio(M_L, n̂; gas=gas)
     # momentum change
@@ -90,7 +90,7 @@ function state_behind(state_L::ConservedState, n̂, t̂; gas::CaloricallyPerfect
 end
 
 function state_behind(state_L::PrimitiveState, n̂, t̂; gas::CaloricallyPerfectGas=DRY_AIR)
-    @assert t̂ ⋅ n̂ ≈ 0.0 "tangent and normal vectors should be normal to each other."
+    @assert ≈(t̂ ⋅ n̂, 0.0, atol=eps(Float64)) "tangent and normal vectors should be normal to each other."
     # mach number change
     M_n_R = (state_L.M ⋅ n̂) * shock_normal_mach_ratio(state_L.M, n̂; gas=gas)
     M_t_R = (state_L.M ⋅ t̂) * shock_tangent_mach_ratio(state_L.M, n̂; gas=gas)
@@ -104,7 +104,7 @@ end
 ### COMPUTE STATES WITHOUT RESPECTING UNITS ###
 
 function primitive_state_behind(state_L, n̂, t̂; gas::CaloricallyPerfectGas=DRY_AIR)
-    @assert t̂ ⋅ n̂ ≈ 0.0 "tangent and normal vectors should be normal to each other."
+    @assert ≈(t̂ ⋅ n̂, 0.0, atol=eps(Float64)) "tangent and normal vectors should be normal to each other."
     M_L = state_L[2:end-1]
     # mach number change
     Mn_R = (M_L ⋅ n̂) * shock_normal_mach_ratio(M_L, n̂; gas=gas)
@@ -117,7 +117,7 @@ function primitive_state_behind(state_L, n̂, t̂; gas::CaloricallyPerfectGas=DR
 end
 
 function conserved_state_behind(state_L, n̂, t̂; gas::CaloricallyPerfectGas=DRY_AIR)
-    @assert t̂ ⋅ n̂ ≈ 0.0 "tangent and normal vectors should be normal to each other."
+    @assert ≈(t̂ ⋅ n̂, 0.0, atol=eps(Float64)) "tangent and normal vectors should be normal to each other."
     ρv_L = state_L[2:end-1]
     ρe_L = internal_energy_density(state_L[1], ρv_L, state_L[end])
     # find the speed of sound w/o units :)

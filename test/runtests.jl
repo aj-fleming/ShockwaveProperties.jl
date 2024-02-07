@@ -104,7 +104,7 @@ end
                 vals = mapreduce(hcat, y) do α
                     shock_normal(α, M, R_b) ⋅ shock_tangent(α, M, R_b)
                 end
-                @test all(≈(0), vals)
+                @test all(≈(0.0, atol=eps(Float64)), vals)
             end
         end
     end
