@@ -30,7 +30,7 @@ end
 """
     shock_front(α, M_inf, R_b)
 Maps a parameter ``α`` to the shock wave generated about a body with radius ``R_b`` 
-by free-stream flow to the right with mach number ``M_infty``.
+by free-stream flow to the right with mach number ``M_∞``.
 
 The shock wave parametrization developed by *Billig* parametrizes the shock wave on the y-coordinate.
 """
@@ -50,7 +50,7 @@ end
 """
     shock_normal(α, M_inf, R_b)
 Maps a parameter ``α`` to the outward-facing normal to a shock wave generated about a body with radius ``R_b``
-by a free-stream flow to the right with nach number ``M_infty``
+by a free-stream flow to the right with nach number ``M_∞``
 
 The shock wave parametrization developed by *Billig* parametrizes the shock wave on the y-coordinate.
 """
